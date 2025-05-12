@@ -659,7 +659,10 @@ func (h Handler) prepareRequest(req *http.Request, repl *caddy.Replacer) (*http.
 		}
 	}
 
-	if req.ContentLength == 0 {
+	// Handle both zero ContentLength and negative ContentLength (which happens with HTTP/3)
+	// for GET and HEAD requests by setting body to nil and ContentLength to 0
+	if req.ContentLength == 0 || (req.ContentLength < 0 && (req.Method == "GET" || req.Method == "HEAD")) {
+		req.ContentLength = 0
 		req.Body = nil // Issue golang/go#16036: nil Body for http.Transport retries
 	}
 
